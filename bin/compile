@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+echo "Found .plugins file" | indent
+
+if [ ! -s $1/.plugins ]; then
+  echo ".plugins file empty. !!!!." | indent
+  exit 0
+fi
+
+s3_get() {
+  local aws_key=$(echo $AWS_KEY_ID)
+  local aws_secret=$(echo $AWS_SECRET_KEY)
+  local aws_bucket=$(echo $AWS_BUCKET_NAME)
+  local aws_region=$(echo $AWS_REGION_NAME)
+
+  if [ -z "$aws_key" ]; then
+    echo "Need AWS_ACCESS_KEY_ID to be set" | indent
+    exit 1
+  fi
+
+  if [ -z "$aws_secret" ]; then
+    echo "Need AWS_SECRET_ACCESS_KEY to be set" | indent
+    exit 1
+  fi
+
+  local cloud_path="$1"
+  local local_file_path="${2:--}"
+  local contentType="application/octet-stream"
+  local resource="/$aws_bucket/${cloud_path}"
+  local stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
+  local date="$(date -u '+%a, %e %b %Y %H:%M:%S +0000')"
+  local string_to_sign
+  printf -v string_to_sign "%s\n%s\n\n%s\n%s" "GET" "" "$date" "$resource"
+  local signature=$(echo -n "$string_to_sign" | openssl sha1 -binary -hmac "$aws_secret" | openssl base64)
+  local authorization="AWS $aws_key:${signature}"
+
+  curl https://"$aws_region".amazonaws.com"${resource}" -H Date:"${date}" -H Authorization:"${authorization}" -o "${local_file_path}"
+}
+
+# In case if you you have sox binary otherwise you can comment this function (or leave it, there is no damage!!)
+exportSoxPaths(){
+  echo "exporting SOX PATH and LIBRARY_PATH" | indent
+  PROFILE_PATH="$BUILD_DIR/.profile.d/sox.sh"
+  mkdir -p $(dirname $PROFILE_PATH)
+  echo 'export PATH="$PATH:plugins/sox/bin"' >> $PROFILE_PATH
+  echo 'export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:plugins/sox/lib"' >> $PROFILE_PATH
+}
+
+BUILD_DIR=$1
+VENDOR_DIR="plugins"
+env_dir=$3
+
+if [ -d "$env_dir" ]; then
+  for e in $(ls $env_dir); do
+    echo "$e=$(cat $env_dir/$e)"
+    export "$e=$(cat $env_dir/$e)"
+  done
+else
+  echo "Can not read environment variables!!!!"
+  exit 1
+fi
+
+cd $BUILD_DIR
+mkdir -p $VENDOR_DIR
+cd $VENDOR_DIR
+
+while read path; do
+  echo Installing "${path}" | indent
+  s3_get $path $path
+
+  if [[ ${path: -7} == ".tar.gz" ]]; then
+    tar zxf $path
+  fi
+
+  # In case you have sox binary otherwise you can comment the next three lines (or leave them, there is no damage!!)
+  if [[ ${path: -10} == "sox.tar.gz" ]]; then
+    exportSoxPaths
+  fi
+
+done < $BUILD_DIR/.plugins
+
+
+
+
+
+
+
+

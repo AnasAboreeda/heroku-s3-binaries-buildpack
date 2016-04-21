@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -f $1/.plugins ]; then
+    echo "Using S3 Binaries buildpack!"
+    exit 0
+else
+    exit 1
+fi
