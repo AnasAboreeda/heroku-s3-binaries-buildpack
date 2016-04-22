@@ -70,6 +70,7 @@ cd $VENDOR_DIR
 while read path; do
   echo Installing "${path}" | indent
   s3_get $path $path
+  chmod 755 $path
 
   if [[ ${path: -7} == ".tar.gz" ]]; then
     tar zxf $path
