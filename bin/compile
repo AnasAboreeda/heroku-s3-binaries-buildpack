@@ -38,7 +38,7 @@ s3_get() {
   local signature=$(echo -n "$string_to_sign" | openssl sha1 -binary -hmac "$aws_secret" | openssl base64)
   local authorization="AWS $aws_key:${signature}"
 
-  curl https://"$aws_region".amazonaws.com"${resource}" -H Date:"${date}" -H Authorization:"${authorization}" -o "${local_file_path}"
+  curl -s https://"$aws_region".amazonaws.com"${resource}" -H Date:"${date}" -H Authorization:"${authorization}" -o "${local_file_path}"
 }
 
 # In case if you you have sox binary otherwise you can comment this function (or leave it, there is no damage!!)
@@ -56,7 +56,6 @@ env_dir=$3
 
 if [ -d "$env_dir" ]; then
   for e in $(ls $env_dir); do
-    echo "$e=$(cat $env_dir/$e)"
     export "$e=$(cat $env_dir/$e)"
   done
 else
