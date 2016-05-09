@@ -55,9 +55,9 @@ Vagrant.configure(2) do |config|
   # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
   # such as FTP and Heroku are also available. See the documentation at
   # https://docs.vagrantup.com/v2/push/atlas.html for more information.
-  config.push.define "heroku" do |push|
-    push.app = "sharkfish"
-  end
+  #  config.push.define "heroku" do |push|
+  #    push.app = "## YOUR HEROKU APP NAME ##"
+  #  end
 
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
